@@ -3,7 +3,7 @@ import * as opn from 'opn'
 import * as inquirer from 'inquirer'
 import * as adjNoun from 'adj-noun'
 import * as singleLineLog from 'single-line-log'
-import { createNode } from './node'
+import { Node } from './node'
 
 adjNoun.seed(Math.floor(Math.random() * 1000))
 
@@ -26,17 +26,6 @@ async function promptUser() {
     await question('How many nodes would you like to start?', 'input', validateNodes),
     10,
   )
-  const numPeers = parseInt(
-    await question('How many peer nodes should each node be connected to directly?', 'input', validatPeers),
-    10,
-  )
-
-  if (numPeers >= numNodes) {
-    await log(format(`There are only ${numNodes} nodes! You can't connect each node to ${numPeers} other nodes!`, chalk.red))
-    await log(format(`Let's try this again...`, chalk.white))
-    console.log()
-    return promptUser();
-  }
 
   console.log()
   await log(format(`Awesome! Here's the plan:`, chalk.magenta))
@@ -46,14 +35,26 @@ async function promptUser() {
 
   const basePort = 3000
 
-  const nodeCollection = []
-
+  const nodeCollection: Node[] = []
   for (let port = basePort; port < basePort + numNodes; port++) {
-    let node = createNode(port, adjNoun().join('-'))
+    let node = new Node(adjNoun().join('-'), port)
     nodeCollection.push(node)
+  }
+
+  for (let i = 0; i < nodeCollection.length; i++) {
+    let node = nodeCollection[i]
+    for (let j = 0; j < nodeCollection.length; j++) {
+      if (j !== i) {
+        let diff = i - (i - j < 0 ? j - nodeCollection.length : j)
+        node.addPeer(
+          nodeCollection[j],
+          diff === 1 || diff === numNodes - 1
+        )
+      }
+    }
     await log([
       ...format(`http://localhost:${node.port}`, chalk.underline),
-      ...format(' node name: ', chalk.italic.dim.magenta),
+      ...format(' node name: ', chalk.dim.magenta),
       ...format(node.name, chalk.italic.magenta)
     ], 30)
   }
@@ -80,7 +81,7 @@ async function promptUser() {
       chalk.white.underline.dim(` http://localhost:${node.port}`)
     )
     await sleep(500)
-    await node.start()
+    node.start()
     singleLineLog.stdout(
       chalk.magenta(`✓`) + chalk.magenta.dim(` Started `) + chalk.italic.magenta(`${node.name} `) +
       chalk.magenta.dim(`at `) +
@@ -112,10 +113,10 @@ async function sleep(milliseconds = 100) {
 }
 
 function validateNodes(value: string) {
-  if (/\d+/g.test(value) && parseInt(value, 10) > 1) {
+  if (/\d+/g.test(value) && parseInt(value, 10) > 2) {
     return true
   } else {
-    return 'Value must be an integer greater than one.'
+    return 'Value must be an integer greater than two.'
   }
 }
 

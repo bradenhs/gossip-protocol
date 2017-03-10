@@ -5,8 +5,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Document</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      text-align: right;
+      font-family: Arial
+    }
+    .message {
+      border-bottom: 1px solid black;
+      padding: 40px;
+      text-align: left;
+    }
+    .container {
+      position: fixed;
+      width: 200px;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      background: #eee;
+      padding: 20px
+    }
+  </style>
 </head>
 <body>
-  Hello from Mars
+  <div class='container'>
+    <div id='node'></div>
+    <textarea></textarea>
+    <button onclick='sendMessage()'>Send Message</button>
+  </div>
+  <div id='messages' style='float: right; width: calc(100% - 240px)'>
+  </div>
+  <script>
+    var socket = io()
+    var peers;
+    var nodeName;
+    socket.on('node', node => {
+      peers = node.peers;
+      nodeName = node.name
+      document.title = node.name
+      render()
+    })
+
+    function render() {
+      document.querySelector('#node').innerHTML = `
+        <h1>${nodeName}</h1>
+        <h3>Peers</h3>
+        ${peers.map(p => {
+          return `<div>
+            <input type='checkbox' onchange='toggleNode("${p.id}")' ${p.active ? 'checked' : ''}/>
+            ${p.name}
+          </div>`
+        })}
+      `
+    }
+
+    socket.on('getMessage', msg => {
+      let message = document.createElement('div')
+      message.className = 'message'
+      message.innerHTML = msg
+      document.title = 'New message!'
+      setTimeout(() => {
+        document.title = nodeName
+      }, 1000)
+      document.querySelector('#messages').appendChild(message)
+    })
+
+    socket.on('connectPeerFromServer', obj => {
+      peers.find(p => p.id === obj.id).active = true;
+      render()
+    })
+
+    socket.on('disconnectPeerFromServer', obj => {
+      peers.find(p => p.id === obj.id).active = false;
+      render()
+    })
+
+    function toggleNode(id) {
+      var peer = peers.find(p => p.id === id)
+      peer.active = !peer.active
+      if (peer.active) {
+        socket.emit('activate', peer.id)
+      } else {
+        socket.emit('deactivate', peer.id)
+      }
+    }
+
+    function sendMessage() {
+      let textarea = document.querySelector('textarea')
+      socket.emit('messageClient', textarea.value + `<br/><i>-${nodeName}</i>`)
+      textarea.value = ''
+    }
+  </script>
 </body>
 </html>
