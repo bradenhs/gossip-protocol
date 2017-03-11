@@ -53,7 +53,7 @@ Because long random numbers have a much greater chance of creating collisions in
 Low values means messages propogate slower but there is less stress on nodes since they aren't doing as much
 work gossiping.
 
-## Part II Question
+## Part II Questions
 
 *1. Did new messages eventually end up on all the nodes that were connected?*
 
@@ -72,7 +72,7 @@ before the other message has a chance to propogate across the entire network the
 Because when it comes online it just asks its neighbors what the latest is and they give it everything it missed since
 it was last online.
 
-*4. Describe, in a paragraph or two, how you could use the basic scheme implemented here to add failure detection to the system using a reachability table.
+*4. Describe, in a paragraph or two, how you could use the basic scheme implemented here to add failure detection to the system using a reachability table.*
 
 As far as I understand a reachability table represents which nodes are connected to which nodes. Basically, a 1 indicates
 that there is a connection and a 0 indicates that there is not a connection. A reachability table would allow me to
@@ -80,7 +80,7 @@ verify the failure of a specific node. If the node that is a peer of a connected
 look up in the reachability table what other nodes may access the failed one and check with them that they can't
 access it also. If it was failed it's peer could adds more peers to itself to maintain the performance of the system.
 
-*5. Describe how you would use the system built in this lab to disseminate Foursquare checkin data so that a group of people could know where the others are based on their Foursquare checkins.
+*5. Describe how you would use the system built in this lab to disseminate Foursquare checkin data so that a group of people could know where the others are based on their Foursquare checkins.*
 
 Basically I could pass around the checkin data instead of the messages and since the checkins happen at certain locations
 I could show those coordinates on some sort of a map when they become active.
